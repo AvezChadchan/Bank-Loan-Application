@@ -1,4 +1,3 @@
-<!-- //testing -->
 <html>
     <link rel="stylesheet" href="css/adminhomepage.css">
     <body>
