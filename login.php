@@ -31,6 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
             if($data[1]==$password)
             {
                 echo "Login successful!";
+                
                 header("Location:entry.php");  
             }
             else

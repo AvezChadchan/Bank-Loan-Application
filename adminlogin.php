@@ -53,9 +53,9 @@ mysqli_close($conn);
 <h2>Admin Login Form</h2>
 <form method="post" action="">
     <label for="username">Username:</label><br>
-    <input type="text" id="username" name="username"><br>
+    <input type="text" id="username" name="username" style="color: black;"><br>
     <label for="password">Password:</label><br>
-    <input type="password" id="password" name="password"><br><br>
+    <input type="password" id="password" name="password" style="color: black;"><br><br>
     <input type="submit" value="Login" id="btn"> 
 </form>
 </div>
