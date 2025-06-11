@@ -1,51 +1,47 @@
 <?php
-$DB_HOST= 'localhost';
-$DB_USER= 'root';
-$DB_PASS= '';
-$DB_NAME= 'register';
-
-$conn = mysqli_connect($DB_HOST,$DB_USER,$DB_PASS,$DB_NAME);
-
-if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
+$conn = new mysqli('localhost', 'root', '', 'loan_system');
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
-    $password = $_POST['password'];
-
-    // Insert user data into database
-    $sql = "INSERT INTO registeration (username, password) VALUES ('$username', '$password')";
-
-    if (mysqli_query($conn, $sql)) {
-        echo "Registration successful!";
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    
+    $stmt = $conn->prepare("INSERT INTO registration (username, password) VALUES (?, ?)");
+    $stmt->bind_param("ss", $username, $password);
+    
+    if ($stmt->execute()) {
+        echo "<p class='success'>Registration successful!</p>";
+        header("Location: login.php");
+        exit();
     } else {
-        echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+        echo "<p class='error'>Error: " . $stmt->error . "</p>";
     }
+    $stmt->close();
 }
-
-mysqli_close($conn);
+$conn->close();
 ?>
 <html>
 <head>
-    <title>Registration Page</title>
+    <title>Registration</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<link rel="stylesheet" href="css/register.css">
 <body>
-    <div class="box">
-        <div class="container">
-
-            <h2>Registration Form</h2>
-            <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+<div class="container">
+    <div class="main">
+        <div class="content">
+            <h2>Registration</h2>
+            <form method="post" action="">
                 <label for="username">Username:</label><br>
                 <input type="text" id="username" name="username" required><br><br>
-                
                 <label for="password">Password:</label><br>
                 <input type="password" id="password" name="password" required><br><br>
-                
-                <input type="submit" value="Register" id="btn"><br><br>
-                <a href="login.php">Already have an Account Click Here!!!</a>
+                <button type="submit" class="btn">Register</button><br><br>
+                <a href="login.php">Already have an Account?</a>
             </form>
-        </div>        
+        </div>
+    </div>
 </div>
 </body>
 </html>

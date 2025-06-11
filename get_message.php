@@ -1,30 +1,21 @@
 <?php
-$conn = new mysqli("localhost","root","","message");
+$conn = new mysqli("localhost", "root", "", "loan_system");
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$sql = "SELECT message FROM message_details ORDER BY message DESC LIMIT 1";
+$email = $_GET['email'] ?? '';
+$stmt = $conn->prepare("SELECT message FROM message_details WHERE email = ? ORDER BY id DESC LIMIT 1");
+$stmt->bind_param("s", $email);
+$stmt->execute();
+$result = $stmt->get_result();
 
-$result = $conn->query($sql);
-
-if ($result === false) 
-{
-    echo "Error executing query: " . $conn->error;
-} 
-else 
-{
-    if ($result->num_rows > 0) 
-    {
-        while($row = $result->fetch_array())
-        {
-            echo $row["0"];
-        }
-    } 
-    else 
-    {
-        echo "No message";
-    }
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    echo htmlspecialchars($row["message"]);
+} else {
+    echo "No message available";
 }
+$stmt->close();
 $conn->close();
 ?>
