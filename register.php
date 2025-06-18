@@ -1,16 +1,26 @@
 <?php
+// Database connection
 $conn = new mysqli('localhost', 'root', '', 'loan_system');
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
+    $email = $_POST['email']; // Using email as the username field
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     
-    $stmt = $conn->prepare("INSERT INTO registration (username, password) VALUES (?, ?)");
-    $stmt->bind_param("ss", $username, $password);
+    // Prepare the SQL query for the users table
+    $stmt = $conn->prepare("INSERT INTO users (email, password) VALUES (?, ?)");
     
+    // Check if prepare failed
+    if ($stmt === false) {
+        die("Prepare failed: " . $conn->error);
+    }
+    
+    // Bind parameters
+    $stmt->bind_param("ss", $email, $password);
+    
+    // Execute the statement
     if ($stmt->execute()) {
         echo "<p class='success'>Registration successful!</p>";
         header("Location: login.php");
@@ -18,8 +28,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         echo "<p class='error'>Error: " . $stmt->error . "</p>";
     }
+    
+    // Close the statement
     $stmt->close();
 }
+
+// Close the connection
 $conn->close();
 ?>
 <html>
@@ -33,8 +47,8 @@ $conn->close();
         <div class="content">
             <h2>Registration</h2>
             <form method="post" action="">
-                <label for="username">Username:</label><br>
-                <input type="text" id="username" name="username" required><br><br>
+                <label for="email">Email:</label><br>
+                <input type="email" id="email" name="email" required><br><br>
                 <label for="password">Password:</label><br>
                 <input type="password" id="password" name="password" required><br><br>
                 <button type="submit" class="btn">Register</button><br><br>

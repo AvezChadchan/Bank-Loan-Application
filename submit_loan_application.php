@@ -1,6 +1,8 @@
 <?php
 session_start();
-if (!isset($_SESSION['username']) || !isset($_SESSION['user_id'])) {
+
+// Redirect if user is not logged in
+if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
@@ -14,9 +16,9 @@ if (isset($_POST['submit'])) {
         die("Connection failed: " . $conn->connect_error);
     }
     
-    // Verify that the user_id exists in the registration table
+    // Verify that the user_id exists in the users table
     $user_id = $_SESSION['user_id'];
-    $stmt = $conn->prepare("SELECT id FROM registration WHERE id = ?");
+    $stmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -44,16 +46,16 @@ if (isset($_POST['submit'])) {
         if ($stmt === false) {
             die("Prepare failed: " . $conn->error);
         }
-        $stmt->bind_param("ssisis", $name, $email, $loan_amount, $purpose, $user_id, $created_at);
+        $stmt->bind_param("ssdisi", $name, $email, $loan_amount, $purpose, $user_id, $created_at); // Corrected to "ssdisi"
         if ($stmt->execute()) {
             echo "<p class='success'>Loan Application Submitted!</p>";
             // Set the next page based on the purpose
             if ($purpose == "Business") {
-                $next_page = "business.php?email=$email";
+                $next_page = "business.php?email=" . urlencode($email);
             } elseif ($purpose == "Personal") {
-                $next_page = "personal.php?email=$email";
+                $next_page = "personal.php?email=" . urlencode($email);
             } elseif ($purpose == "Education") {
-                $next_page = "education.php?email=$email";
+                $next_page = "education.php?email=" . urlencode($email);
             }
         } else {
             echo "<p class='error'>Error: " . $stmt->error . "</p>";
@@ -74,16 +76,16 @@ if (isset($_POST['submit'])) {
 <div class="container">
     <div id="message"></div>
     <?php if ($next_page): ?>
-        <p><a href="<?php echo $next_page; ?>" class="btn">Proceed to Additional Details</a></p>
+        <p><a href="<?php echo htmlspecialchars($next_page); ?>" class="btn">Proceed to Additional Details</a></p>
     <?php endif; ?>
-    <button onclick="getMessage('<?php echo $email; ?>')" class="btn">Check Status</button>
+    <button onclick="getMessage('<?php echo htmlspecialchars($email); ?>')" class="btn">Check Status</button>
     <script>
         function getMessage(email) {
             if (!email) {
                 document.getElementById('message').innerHTML = "Please submit an application first.";
                 return;
             }
-            fetch(`get_message.php?email=${email}`)
+            fetch(`get_message.php?email=${encodeURIComponent(email)}`)
             .then(response => response.text())
             .then(data => {
                 document.getElementById('message').innerHTML = data;

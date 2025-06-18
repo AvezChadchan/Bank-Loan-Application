@@ -1,6 +1,8 @@
 <?php
 session_start();
-if (!isset($_SESSION['username'])) {
+
+// Redirect if user is not logged in
+if (!isset($_SESSION['user_id'])) { // Changed from 'username' to 'user_id'
     header("Location: login.php");
     exit();
 }
@@ -17,20 +19,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit"])) {
     $university = $_POST['university'];
     $course = $_POST['course'];
     $amount = $_POST['amount'];
-    $loan_email = $_POST['loan_email'];
+    $loan_email = $_POST['loan_email'] ?? $_SESSION['email']; // Fallback to session email
     
     if (isset($_FILES["file"]) && $_FILES["file"]["error"] == 0) {
         $file_name = basename($_FILES["file"]["name"]);
         $file_tmp = $_FILES["file"]["tmp_name"];
         $upload_dir = "education/uploads/";
-        if (!file_exists($upload_dir)) mkdir($upload_dir, 0777, true);
-        if (move_uploaded_file($file_tmp, $upload_dir . $file_name)) {
-            $file_path = $upload_dir . $file_name;
+        if (!file_exists($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
+        $file_path = $upload_dir . $file_name;
+        if (move_uploaded_file($file_tmp, $file_path)) {
             $stmt = $conn->prepare("INSERT INTO additional_details (loan_email, type, full_name, email, phone, university, course, amount, file_path) VALUES (?, 'education', ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("ssssssis", $loan_email, $full_name, $email, $phone, $university, $course, $amount, $file_path);
-            $stmt->execute();
+            if ($stmt === false) {
+                die("Prepare failed: " . $conn->error);
+            }
+            $stmt->bind_param("ssssssds", $loan_email, $full_name, $email, $phone, $university, $course, $amount, $file_path); // Adjusted types
+            if ($stmt->execute()) {
+                echo "<p class='success'>Education details submitted successfully!</p>";
+            } else {
+                echo "<p class='error'>Error executing query: " . $stmt->error . "</p>";
+            }
             $stmt->close();
-            echo "<p class='success'>Education details submitted successfully!</p>";
         } else {
             echo "<p class='error'>Error uploading file.</p>";
         }
@@ -42,12 +52,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit"])) {
 <head>
     <title>Education Loan Application</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .error { color: red; }
+        .success { color: green; }
+    </style>
 </head>
 <body>
 <div class="container">
     <h2>Education Loan Application</h2>
     <form action="" method="post" enctype="multipart/form-data">
-        <input type="hidden" name="loan_email" value="<?php echo $_GET['email'] ?? ''; ?>">
+        <input type="hidden" name="loan_email" value="<?php echo htmlspecialchars($_GET['email'] ?? $_SESSION['email'] ?? ''); ?>">
         <label for="full_name">Full Name:</label><br>
         <input type="text" id="full_name" name="full_name" required><br>
         <label for="email">Email:</label><br>
@@ -68,7 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit"])) {
     <button onclick="getMessage()" class="btn">Check Status</button>
     <script>
         function getMessage() {
-            fetch('get_message.php?email=<?php echo $_GET['email'] ?? ''; ?>')
+            fetch('get_message.php?email=<?php echo urlencode($_GET['email'] ?? $_SESSION['email'] ?? ''); ?>')
             .then(response => response.text())
             .then(data => {
                 document.getElementById('message').innerHTML = data;
